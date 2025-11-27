@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { generateShareCode } from "@/lib/group-utils";
 import { getCurrentUser } from "@/lib/auth";
+import { handleSupabaseError, isSupabaseConfigured } from "@/lib/error-handler";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -18,6 +19,20 @@ export default function CreateGroupPage() {
   const [groupName, setGroupName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const user = await getCurrentUser();
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    setCheckingAuth(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,12 +43,17 @@ export default function CreateGroupPage() {
       const shareCode = generateShareCode();
       const user = await getCurrentUser();
       
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      
       const { data, error: supabaseError } = await supabase
         .from("groups")
         .insert({
           name: groupName,
           share_code: shareCode,
-          created_by: user?.id || null,
+          created_by: user.id,
         })
         .select()
         .single();
@@ -60,11 +80,26 @@ export default function CreateGroupPage() {
         router.push(`/group/${data.id}?code=${shareCode}`);
       }
     } catch (err: any) {
-      setError(err.message || "Failed to create group");
+      if (!isSupabaseConfigured()) {
+        setError("Supabase is not configured. Please check your environment variables.");
+      } else {
+        setError(handleSupabaseError(err));
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">

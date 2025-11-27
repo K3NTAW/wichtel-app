@@ -5,7 +5,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCurrentUser } from "@/lib/auth";
+import { isSupabaseConfigured } from "@/lib/error-handler";
 import { useRouter } from "next/navigation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function HomePage() {
   const router = useRouter();
@@ -40,6 +42,13 @@ export default function HomePage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {!isSupabaseConfigured() && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                Supabase is not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file.
+              </AlertDescription>
+            </Alert>
+          )}
           {user ? (
             <>
               <Link href="/dashboard" className="block">
@@ -65,24 +74,9 @@ export default function HomePage() {
                   Sign In / Sign Up
                 </Button>
               </Link>
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Or continue without account</span>
-                </div>
-              </div>
-              <Link href="/create" className="block">
-                <Button variant="outline" className="w-full" size="lg">
-                  Create New Group
-                </Button>
-              </Link>
-              <Link href="/join" className="block">
-                <Button variant="outline" className="w-full" size="lg">
-                  Join Existing Group
-                </Button>
-              </Link>
+              <CardDescription className="text-center text-sm text-muted-foreground mt-4">
+                You need to sign in to create or join groups
+              </CardDescription>
             </>
           )}
         </CardContent>

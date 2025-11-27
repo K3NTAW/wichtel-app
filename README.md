@@ -27,11 +27,16 @@ npm install
    - Run the SQL schema from `supabase-schema.sql` in your Supabase SQL editor
    - Copy your Supabase URL and anon key
 
-3. Create `.env.local` file:
+3. Create `.env.local` file in the root directory:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
+
+**Important:** 
+- Make sure the `.env.local` file is in the root directory (same level as `package.json`)
+- Restart your development server after creating/updating `.env.local`
+- The app will show an error message if Supabase is not configured
 
 4. Run the development server:
 ```bash

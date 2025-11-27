@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,12 +30,15 @@ export default function LoginPage() {
       if (isSignUp) {
         const { error: signUpError } = await signUp(email, password, name);
         if (signUpError) throw signUpError;
-        // After signup, user needs to verify email (or we can auto-sign them in)
-        router.push("/");
+        // After signup, redirect to dashboard or redirect URL
+        const redirect = searchParams.get("redirect");
+        router.push(redirect || "/dashboard");
       } else {
         const { error: signInError } = await signIn(email, password);
         if (signInError) throw signInError;
-        router.push("/dashboard");
+        // Redirect to original destination or dashboard
+        const redirect = searchParams.get("redirect");
+        router.push(redirect || "/dashboard");
       }
     } catch (err: any) {
       setError(err.message || "Authentication failed");

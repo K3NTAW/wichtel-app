@@ -38,6 +38,7 @@ export default function JoinAsParticipantPage() {
   const [error, setError] = useState<string | null>(null);
   const [groupName, setGroupName] = useState<string>("");
   const [isAssigned, setIsAssigned] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const {
     register,
@@ -63,9 +64,24 @@ export default function JoinAsParticipantPage() {
     }
   }, [groupId]);
 
+  const checkAuth = useCallback(async () => {
+    const user = await getCurrentUser();
+    if (!user) {
+      router.push(`/login?redirect=/group/${groupId}/join?code=${shareCode}`);
+      return;
+    }
+    setCheckingAuth(false);
+  }, [groupId, shareCode, router]);
+
   useEffect(() => {
-    loadGroup();
-  }, [loadGroup]);
+    checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (!checkingAuth) {
+      loadGroup();
+    }
+  }, [loadGroup, checkingAuth]);
 
   const onSubmit = async (data: ParticipantFormData) => {
     setError(null);
@@ -73,6 +89,11 @@ export default function JoinAsParticipantPage() {
 
     try {
       const user = await getCurrentUser();
+      
+      if (!user) {
+        router.push(`/login?redirect=/group/${groupId}/join?code=${shareCode}`);
+        return;
+      }
       
       const { data: participant, error: insertError } = await supabase
         .from("participants")
@@ -108,6 +129,17 @@ export default function JoinAsParticipantPage() {
       setLoading(false);
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">

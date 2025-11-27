@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { getCurrentUser, signOut } from "@/lib/auth";
+import { handleSupabaseError, isSupabaseConfigured } from "@/lib/error-handler";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { Gift, Users, LogOut, Plus, ArrowRight } from "lucide-react";
@@ -77,7 +78,11 @@ export default function DashboardPage() {
       
       setParticipants(transformedParticipants);
     } catch (err: any) {
-      setError(err.message || "Failed to load dashboard");
+      if (!isSupabaseConfigured()) {
+        setError("Supabase is not configured. Please check your environment variables.");
+      } else {
+        setError(handleSupabaseError(err));
+      }
     } finally {
       setLoading(false);
     }
