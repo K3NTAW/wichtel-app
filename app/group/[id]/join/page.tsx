@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,11 +47,7 @@ export default function JoinAsParticipantPage() {
     resolver: zodResolver(participantSchema),
   });
 
-  useEffect(() => {
-    loadGroup();
-  }, [groupId]);
-
-  const loadGroup = async () => {
+  const loadGroup = useCallback(async () => {
     try {
       const { data, error: groupError } = await supabase
         .from("groups")
@@ -65,7 +61,11 @@ export default function JoinAsParticipantPage() {
     } catch (err: any) {
       setError(err.message || "Failed to load group");
     }
-  };
+  }, [groupId]);
+
+  useEffect(() => {
+    loadGroup();
+  }, [loadGroup]);
 
   const onSubmit = async (data: ParticipantFormData) => {
     setError(null);

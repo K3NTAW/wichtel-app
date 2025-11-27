@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
@@ -30,11 +30,7 @@ export default function ViewWichtelPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadWichtel();
-  }, [groupId, participantId]);
-
-  const loadWichtel = async () => {
+  const loadWichtel = useCallback(async () => {
     try {
       // First, get the assignment to find who this participant should gift
       const { data: assignment, error: assignmentError } = await supabase
@@ -53,7 +49,7 @@ export default function ViewWichtelPage() {
           .single();
 
         if (group && !group.is_assigned) {
-          setError("Wichtels haven't been assigned yet. Please wait for the group organizer to assign them.");
+          setError("Wichtels haven&apos;t been assigned yet. Please wait for the group organizer to assign them.");
           setLoading(false);
           return;
         }
@@ -74,7 +70,11 @@ export default function ViewWichtelPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [groupId, participantId]);
+
+  useEffect(() => {
+    loadWichtel();
+  }, [loadWichtel]);
 
   if (loading) {
     return (
@@ -124,7 +124,7 @@ export default function ViewWichtelPage() {
                   <CardTitle className="text-3xl">Your Wichtel</CardTitle>
                 </div>
                 <CardDescription className="mt-2 text-base">
-                  🎁 This is the person you're buying a gift for! Use their answers below to choose the perfect present.
+                  🎁 This is the person you&apos;re buying a gift for! Use their answers below to choose the perfect present.
                 </CardDescription>
               </div>
             </div>
@@ -133,7 +133,7 @@ export default function ViewWichtelPage() {
             <div className="p-8 bg-primary/10 rounded-lg border-2 border-primary text-center">
               <div className="text-4xl mb-4">🎁</div>
               <h2 className="text-3xl font-bold mb-2">{wichtel?.name}</h2>
-              <p className="text-lg text-muted-foreground">You're buying a gift for {wichtel?.name}!</p>
+              <p className="text-lg text-muted-foreground">You&apos;re buying a gift for {wichtel?.name}!</p>
             </div>
 
             {wichtel && (

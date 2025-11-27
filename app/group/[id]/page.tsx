@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,13 +40,7 @@ export default function GroupPage() {
   const [foundParticipant, setFoundParticipant] = useState<Participant | null>(null);
   const [searching, setSearching] = useState(false);
 
-  useEffect(() => {
-    loadGroup();
-    const interval = setInterval(loadGroup, 5000); // Refresh every 5 seconds
-    return () => clearInterval(interval);
-  }, [groupId]);
-
-  useEffect(() => {
+  const loadGroup = useCallback(async () => {
     // Check if user is logged in and has a participant entry for this group
     const checkUserParticipant = async () => {
       if (!group) return;
@@ -89,7 +83,7 @@ export default function GroupPage() {
     checkUserParticipant();
   }, [groupId, group]);
 
-  const loadGroup = async () => {
+  const loadGroup = useCallback(async () => {
     try {
       const { data: groupData, error: groupError } = await supabase
         .from("groups")
@@ -113,7 +107,13 @@ export default function GroupPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [groupId]);
+
+  useEffect(() => {
+    loadGroup();
+    const interval = setInterval(loadGroup, 5000); // Refresh every 5 seconds
+    return () => clearInterval(interval);
+  }, [loadGroup]);
 
   const copyShareLink = () => {
     const link = `${window.location.origin}/group/${groupId}?code=${shareCode}`;
@@ -327,7 +327,7 @@ export default function GroupPage() {
             <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
               <Gift className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <AlertDescription className="text-blue-900 dark:text-blue-100">
-                <strong>Wichtels have been assigned!</strong> Find your name below (or search for it) to see who you're buying a gift for.
+                <strong>Wichtels have been assigned!</strong> Find your name below (or search for it) to see who you&apos;re buying a gift for.
               </AlertDescription>
             </Alert>
 
@@ -340,7 +340,7 @@ export default function GroupPage() {
                     View Your Wichtel
                   </CardTitle>
                   <CardDescription className="text-base">
-                    You're registered as <strong>{foundParticipant.name}</strong>
+                    You&apos;re registered as <strong>{foundParticipant.name}</strong>
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -364,7 +364,7 @@ export default function GroupPage() {
                 <CardDescription>
                   {foundParticipant 
                     ? "Not you? Search for a different name below" 
-                    : "Enter your name to see who you're buying a gift for"}
+                    : "Enter your name to see who you&apos;re buying a gift for"}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -402,7 +402,7 @@ export default function GroupPage() {
               <CardHeader>
                 <CardTitle>All Participants</CardTitle>
                 <CardDescription>
-                  Click on your name to see who you're wichteling for
+                  Click on your name to see who you&apos;re wichteling for
                 </CardDescription>
               </CardHeader>
               <CardContent>

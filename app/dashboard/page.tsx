@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,11 +33,7 @@ export default function DashboardPage() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadDashboard();
-  }, []);
-
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     try {
       const currentUser = await getCurrentUser();
       if (!currentUser) {
@@ -76,7 +72,11 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -183,7 +183,7 @@ export default function DashboardPage() {
                         {group.name}
                       </CardTitle>
                       <CardDescription>
-                        You're registered as: {participant?.name}
+                        You&apos;re registered as: {participant?.name}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
