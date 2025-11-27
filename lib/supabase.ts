@@ -18,6 +18,9 @@ export const supabase = createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
+      flowType: 'pkce',
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      storageKey: 'supabase.auth.token',
     },
     db: {
       schema: 'public',
@@ -25,6 +28,12 @@ export const supabase = createClient(
     global: {
       headers: {
         'x-client-info': 'wichtel-app',
+      },
+      fetch: (url, options = {}) => {
+        return fetch(url, {
+          ...options,
+          credentials: 'include',
+        })
       },
     },
   }

@@ -24,6 +24,9 @@ npm install
    - Create a new Supabase project
    - Enable Authentication in Supabase (Settings > Authentication)
    - Configure Email provider (or disable email confirmation in Auth settings for easier testing)
+   - **Important for CORS**: Go to Authentication > URL Configuration and add:
+     - Site URL: `http://localhost:3000` (for development) or your production URL
+     - Redirect URLs: Add `http://localhost:3000/**` and your production URL with `/**`
    - Run the SQL schema from `supabase-schema.sql` in your Supabase SQL editor
    - Copy your Supabase URL and anon key
 

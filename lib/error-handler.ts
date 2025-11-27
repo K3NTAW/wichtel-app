@@ -7,8 +7,8 @@ export function handleSupabaseError(error: any): string {
   }
 
   // Network errors
-  if (error.message?.includes('NetworkError') || error.message?.includes('Failed to fetch')) {
-    return 'Network error: Please check your internet connection and ensure Supabase is configured correctly.';
+  if (error.message?.includes('NetworkError') || error.message?.includes('Failed to fetch') || error.message?.includes('CORS')) {
+    return 'Network/CORS error: Please ensure your Supabase project allows requests from this domain. Go to Supabase Dashboard > Authentication > URL Configuration and add your domain to the allowed list.';
   }
 
   // Supabase specific errors
