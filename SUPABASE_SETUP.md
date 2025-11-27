@@ -4,24 +4,28 @@ If you're experiencing CORS errors when deploying to Vercel or other platforms, 
 
 ## Fix CORS Errors
 
+The error "Credential is not supported if the CORS header 'Access-Control-Allow-Origin' is '*'" means Supabase needs to know your specific domain, not use a wildcard.
+
 1. **Go to your Supabase Dashboard**
    - Navigate to: https://supabase.com/dashboard
    - Select your project
 
 2. **Configure Authentication URLs**
    - Go to: **Authentication** > **URL Configuration**
-   - Under **Site URL**, add:
-     - For development: `http://localhost:3000`
-     - For production: `https://your-domain.vercel.app` (or your custom domain)
+   - Under **Site URL**, set to your production URL:
+     - `https://wichtel-app-seven.vercel.app` (or your actual domain)
+     - **Important**: Use your actual domain, not a wildcard
    
 3. **Add Redirect URLs**
-   - Under **Redirect URLs**, add:
+   - Under **Redirect URLs**, add each URL on a separate line:
      - `http://localhost:3000/**` (for development)
-     - `https://your-domain.vercel.app/**` (for production)
-     - `https://*.vercel.app/**` (to allow all Vercel preview deployments)
+     - `https://wichtel-app-seven.vercel.app/**` (your production URL)
+     - `https://*.vercel.app/**` (optional: for preview deployments)
+     - **Note**: Each URL must be on its own line
 
 4. **Save Changes**
    - Click "Save" at the bottom of the page
+   - Wait 2-3 minutes for changes to propagate
 
 ## Environment Variables
 

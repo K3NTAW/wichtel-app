@@ -29,12 +29,6 @@ export const supabase = createClient(
       headers: {
         'x-client-info': 'wichtel-app',
       },
-      fetch: (url, options = {}) => {
-        return fetch(url, {
-          ...options,
-          credentials: 'include',
-        })
-      },
     },
   }
 )
