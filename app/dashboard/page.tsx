@@ -66,7 +66,16 @@ export default function DashboardPage() {
         .order("created_at", { ascending: false });
 
       if (participantsError) throw participantsError;
-      setParticipants((participantData || []) as Participant[]);
+      
+      // Transform the data to match our Participant type
+      const transformedParticipants: Participant[] = (participantData || []).map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        group_id: p.group_id,
+        group: Array.isArray(p.group) ? p.group[0] : p.group,
+      }));
+      
+      setParticipants(transformedParticipants);
     } catch (err: any) {
       setError(err.message || "Failed to load dashboard");
     } finally {

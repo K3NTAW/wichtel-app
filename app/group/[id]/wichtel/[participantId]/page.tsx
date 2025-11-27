@@ -187,7 +187,7 @@ export default function ViewWichtelPage() {
                  !wichtel.gift_preferences && !wichtel.other_info && (
                   <Alert>
                     <AlertDescription>
-                      No additional information provided. You'll have to be creative! 🎨
+                      No additional information provided. You&apos;ll have to be creative! 🎨
                     </AlertDescription>
                   </Alert>
                 )}

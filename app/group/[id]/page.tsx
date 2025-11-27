@@ -41,49 +41,6 @@ export default function GroupPage() {
   const [searching, setSearching] = useState(false);
 
   const loadGroup = useCallback(async () => {
-    // Check if user is logged in and has a participant entry for this group
-    const checkUserParticipant = async () => {
-      if (!group) return;
-      
-      const user = await getCurrentUser();
-      if (user) {
-        // Check if user has a participant entry for this group
-        const { data } = await supabase
-          .from("participants")
-          .select("id, name")
-          .eq("group_id", groupId)
-          .eq("user_id", user.id)
-          .single();
-        
-        if (data) {
-          setFoundParticipant(data);
-        }
-      } else {
-        // Fallback to localStorage for non-logged-in users
-        if (typeof window !== "undefined" && group?.is_assigned) {
-          const storedParticipantId = localStorage.getItem(`wichtel_participant_${groupId}`);
-          if (storedParticipantId) {
-            // Verify the participant exists and is in this group
-            supabase
-              .from("participants")
-              .select("id, name")
-              .eq("id", storedParticipantId)
-              .eq("group_id", groupId)
-              .single()
-              .then(({ data }) => {
-                if (data) {
-                  setFoundParticipant(data);
-                }
-              });
-          }
-        }
-      }
-    };
-    
-    checkUserParticipant();
-  }, [groupId, group]);
-
-  const loadGroup = useCallback(async () => {
     try {
       const { data: groupData, error: groupError } = await supabase
         .from("groups")
@@ -109,11 +66,53 @@ export default function GroupPage() {
     }
   }, [groupId]);
 
+  const checkUserParticipant = useCallback(async () => {
+    if (!group) return;
+    
+    const user = await getCurrentUser();
+    if (user) {
+      // Check if user has a participant entry for this group
+      const { data } = await supabase
+        .from("participants")
+        .select("id, name, created_at")
+        .eq("group_id", groupId)
+        .eq("user_id", user.id)
+        .single();
+      
+      if (data) {
+        setFoundParticipant(data);
+      }
+    } else {
+      // Fallback to localStorage for non-logged-in users
+      if (typeof window !== "undefined" && group?.is_assigned) {
+        const storedParticipantId = localStorage.getItem(`wichtel_participant_${groupId}`);
+        if (storedParticipantId) {
+          // Verify the participant exists and is in this group
+            supabase
+              .from("participants")
+              .select("id, name, created_at")
+              .eq("id", storedParticipantId)
+              .eq("group_id", groupId)
+              .single()
+              .then(({ data }) => {
+                if (data) {
+                  setFoundParticipant(data);
+                }
+              });
+        }
+      }
+    }
+  }, [groupId, group]);
+
   useEffect(() => {
     loadGroup();
     const interval = setInterval(loadGroup, 5000); // Refresh every 5 seconds
     return () => clearInterval(interval);
   }, [loadGroup]);
+
+  useEffect(() => {
+    checkUserParticipant();
+  }, [checkUserParticipant]);
 
   const copyShareLink = () => {
     const link = `${window.location.origin}/group/${groupId}?code=${shareCode}`;
@@ -129,7 +128,7 @@ export default function GroupPage() {
     try {
       const { data, error: searchError } = await supabase
         .from("participants")
-        .select("id, name")
+        .select("id, name, created_at")
         .eq("group_id", groupId)
         .ilike("name", `%${searchName.trim()}%`)
         .limit(1)
@@ -347,7 +346,7 @@ export default function GroupPage() {
                   <Link href={`/group/${groupId}/wichtel/${foundParticipant.id}?code=${shareCode}`}>
                     <Button className="w-full" size="lg" variant="default">
                       <Gift className="h-5 w-5 mr-2" />
-                      See Who I'm Buying For
+                      See Who I&apos;m Buying For
                     </Button>
                   </Link>
                 </CardContent>
