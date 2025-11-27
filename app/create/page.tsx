@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { generateShareCode } from "@/lib/group-utils";
+import { getCurrentUser } from "@/lib/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -25,12 +26,14 @@ export default function CreateGroupPage() {
 
     try {
       const shareCode = generateShareCode();
+      const user = await getCurrentUser();
       
       const { data, error: supabaseError } = await supabase
         .from("groups")
         .insert({
           name: groupName,
           share_code: shareCode,
+          created_by: user?.id || null,
         })
         .select()
         .single();

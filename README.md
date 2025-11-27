@@ -4,11 +4,14 @@ A gift exchange app where groups can be created and shared without login. Partic
 
 ## Features
 
-- ✅ Create shareable groups (no login required)
+- ✅ **Authentication** - Sign up/Sign in to track your groups
+- ✅ **My Groups Dashboard** - See all groups you created or joined
+- ✅ Create shareable groups (works with or without login)
 - ✅ Join groups with a share code
 - ✅ Participants provide name and answer questions (hobbies, interests, etc.)
 - ✅ Random Wichtel assignment algorithm
-- ✅ View your assigned Wichtel with their answers
+- ✅ View assigned Wichtel with their answers
+- ✅ Automatic participant detection when logged in
 
 ## Setup
 
@@ -19,6 +22,8 @@ npm install
 
 2. Set up Supabase:
    - Create a new Supabase project
+   - Enable Authentication in Supabase (Settings > Authentication)
+   - Configure Email provider (or disable email confirmation in Auth settings for easier testing)
    - Run the SQL schema from `supabase-schema.sql` in your Supabase SQL editor
    - Copy your Supabase URL and anon key
 

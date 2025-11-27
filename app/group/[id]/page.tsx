@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
+import { getCurrentUser } from "@/lib/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { Copy, Users, Gift, CheckCircle2, Search } from "lucide-react";
@@ -46,25 +47,47 @@ export default function GroupPage() {
   }, [groupId]);
 
   useEffect(() => {
-    // Check if user has a stored participant ID for this group
-    if (typeof window !== "undefined" && group?.is_assigned) {
-      const storedParticipantId = localStorage.getItem(`wichtel_participant_${groupId}`);
-      if (storedParticipantId) {
-        // Verify the participant exists and is in this group
-        supabase
+    // Check if user is logged in and has a participant entry for this group
+    const checkUserParticipant = async () => {
+      if (!group) return;
+      
+      const user = await getCurrentUser();
+      if (user) {
+        // Check if user has a participant entry for this group
+        const { data } = await supabase
           .from("participants")
           .select("id, name")
-          .eq("id", storedParticipantId)
           .eq("group_id", groupId)
-          .single()
-          .then(({ data }) => {
-            if (data) {
-              setFoundParticipant(data);
-            }
-          });
+          .eq("user_id", user.id)
+          .single();
+        
+        if (data) {
+          setFoundParticipant(data);
+        }
+      } else {
+        // Fallback to localStorage for non-logged-in users
+        if (typeof window !== "undefined" && group?.is_assigned) {
+          const storedParticipantId = localStorage.getItem(`wichtel_participant_${groupId}`);
+          if (storedParticipantId) {
+            // Verify the participant exists and is in this group
+            supabase
+              .from("participants")
+              .select("id, name")
+              .eq("id", storedParticipantId)
+              .eq("group_id", groupId)
+              .single()
+              .then(({ data }) => {
+                if (data) {
+                  setFoundParticipant(data);
+                }
+              });
+          }
+        }
       }
-    }
-  }, [groupId, group?.is_assigned]);
+    };
+    
+    checkUserParticipant();
+  }, [groupId, group]);
 
   const loadGroup = async () => {
     try {

@@ -123,16 +123,17 @@ export default function ViewWichtelPage() {
                   <Gift className="h-6 w-6 text-primary" />
                   <CardTitle className="text-3xl">Your Wichtel</CardTitle>
                 </div>
-                <CardDescription className="mt-2">
-                  Here's who you're buying a gift for
+                <CardDescription className="mt-2 text-base">
+                  🎁 This is the person you're buying a gift for! Use their answers below to choose the perfect present.
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="p-6 bg-primary/10 rounded-lg border-2 border-primary">
-              <h2 className="text-2xl font-bold text-center mb-2">{wichtel?.name}</h2>
-              <p className="text-center text-muted-foreground">This is your assigned Wichtel!</p>
+            <div className="p-8 bg-primary/10 rounded-lg border-2 border-primary text-center">
+              <div className="text-4xl mb-4">🎁</div>
+              <h2 className="text-3xl font-bold mb-2">{wichtel?.name}</h2>
+              <p className="text-lg text-muted-foreground">You're buying a gift for {wichtel?.name}!</p>
             </div>
 
             {wichtel && (

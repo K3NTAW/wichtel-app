@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabase";
+import { getCurrentUser } from "@/lib/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -71,10 +72,13 @@ export default function JoinAsParticipantPage() {
     setLoading(true);
 
     try {
+      const user = await getCurrentUser();
+      
       const { data: participant, error: insertError } = await supabase
         .from("participants")
         .insert({
           group_id: groupId,
+          user_id: user?.id || null,
           name: data.name,
           hobbies: data.hobbies || null,
           favorite_colors: data.favorite_colors || null,
