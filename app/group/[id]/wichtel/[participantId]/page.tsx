@@ -122,11 +122,30 @@ export default function ViewWichtelPage() {
           setError("Wichtels haven&apos;t been assigned yet. Please wait for the group organizer to assign them.");
           setLoading(false);
           return;
-        } else {
-          setError("No assignment found for this participant.");
-          setLoading(false);
-          return;
         }
+
+        // Group is assigned but this participant doesn't have an assignment
+        // Check if they joined after assignments were made
+        const { data: participant, error: participantError } = await supabase
+          .from("participants")
+          .select("created_at")
+          .eq("id", participantId)
+          .maybeSingle();
+
+        const { data: assignments, error: assignmentsError } = await supabase
+          .from("assignments")
+          .select("created_at")
+          .eq("group_id", groupId)
+          .limit(1)
+          .maybeSingle();
+
+        if (participant && assignments && new Date(participant.created_at) > new Date(assignments.created_at)) {
+          setError("You joined this group after Wichtels were already assigned. Please contact the group organizer to reassign Wichtels.");
+        } else {
+          setError("No assignment found for this participant. This might happen if you joined after assignments were made. Please contact the group organizer.");
+        }
+        setLoading(false);
+        return;
       }
 
       // Get the receiver's information
@@ -134,9 +153,18 @@ export default function ViewWichtelPage() {
         .from("participants")
         .select("*")
         .eq("id", assignment.receiver_id)
-        .single();
+        .maybeSingle();
 
-      if (receiverError) throw receiverError;
+      if (receiverError && receiverError.code !== 'PGRST116') {
+        throw receiverError;
+      }
+
+      if (!receiver) {
+        setError("The assigned Wichtel participant was not found. This might be a data inconsistency. Please contact the group organizer.");
+        setLoading(false);
+        return;
+      }
+
       setWichtel(receiver);
     } catch (err: any) {
       setError(err.message || "Failed to load Wichtel");

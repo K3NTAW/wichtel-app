@@ -177,27 +177,14 @@ export default function GroupPage() {
       // Check if assignments already exist
       const { data: existingAssignments, error: checkError } = await supabase
         .from("assignments")
-        .select("id")
-        .eq("group_id", groupId)
-        .limit(1);
+        .select("giver_id")
+        .eq("group_id", groupId);
 
       if (checkError && checkError.code !== 'PGRST116') {
         throw checkError;
       }
 
-      if (existingAssignments && existingAssignments.length > 0) {
-        // Assignments already exist, just mark the group as assigned
-        const { error: updateError } = await supabase
-          .from("groups")
-          .update({ is_assigned: true })
-          .eq("id", groupId);
-
-        if (updateError) throw updateError;
-        loadGroup();
-        return;
-      }
-
-      // Get all participants
+      // Get all participants (including any new ones)
       const { data: allParticipants, error: fetchError } = await supabase
         .from("participants")
         .select("id")
@@ -208,7 +195,38 @@ export default function GroupPage() {
         throw new Error("Need at least 2 participants");
       }
 
-      // Shuffle participants
+      // If assignments exist but there are new participants, we need to reassign
+      if (existingAssignments && existingAssignments.length > 0) {
+        const assignedParticipantIds = new Set(existingAssignments.map(a => a.giver_id));
+        const allParticipantIds = new Set(allParticipants.map(p => p.id));
+        
+        // Check if there are participants without assignments
+        const unassignedParticipants = allParticipants.filter(p => !assignedParticipantIds.has(p.id));
+        
+        if (unassignedParticipants.length > 0) {
+          // There are new participants, we need to reassign everyone
+          // Delete existing assignments first
+          const { error: deleteError } = await supabase
+            .from("assignments")
+            .delete()
+            .eq("group_id", groupId);
+
+          if (deleteError) throw deleteError;
+          // Continue to create new assignments below
+        } else {
+          // All participants have assignments, just mark as assigned
+          const { error: updateError } = await supabase
+            .from("groups")
+            .update({ is_assigned: true })
+            .eq("id", groupId);
+
+          if (updateError) throw updateError;
+          loadGroup();
+          return;
+        }
+      }
+
+      // Shuffle participants (allParticipants already fetched above)
       const shuffled = [...allParticipants].sort(() => Math.random() - 0.5);
       
       // Create assignments (each person gets the next person in the shuffled array)
