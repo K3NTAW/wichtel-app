@@ -39,6 +39,7 @@ export default function GroupPage() {
   const [searchName, setSearchName] = useState("");
   const [foundParticipant, setFoundParticipant] = useState<Participant | null>(null);
   const [searching, setSearching] = useState(false);
+  const [assigning, setAssigning] = useState(false);
 
   const loadGroup = useCallback(async () => {
     try {
@@ -155,7 +156,42 @@ export default function GroupPage() {
       return;
     }
 
+    if (group?.is_assigned) {
+      setError("Wichtels have already been assigned for this group!");
+      return;
+    }
+
+    if (assigning) {
+      return; // Prevent double-clicks
+    }
+
+    setAssigning(true);
+    setError(null);
+
     try {
+      // Check if assignments already exist
+      const { data: existingAssignments, error: checkError } = await supabase
+        .from("assignments")
+        .select("id")
+        .eq("group_id", groupId)
+        .limit(1);
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
+      if (existingAssignments && existingAssignments.length > 0) {
+        // Assignments already exist, just mark the group as assigned
+        const { error: updateError } = await supabase
+          .from("groups")
+          .update({ is_assigned: true })
+          .eq("id", groupId);
+
+        if (updateError) throw updateError;
+        loadGroup();
+        return;
+      }
+
       // Get all participants
       const { data: allParticipants, error: fetchError } = await supabase
         .from("participants")
@@ -182,7 +218,22 @@ export default function GroupPage() {
         .from("assignments")
         .insert(assignments);
 
-      if (assignError) throw assignError;
+      if (assignError) {
+        // Handle duplicate key error specifically
+        if (assignError.code === '23505') {
+          // Assignments were created between our check and insert
+          // Just mark the group as assigned
+          const { error: updateError } = await supabase
+            .from("groups")
+            .update({ is_assigned: true })
+            .eq("id", groupId);
+
+          if (updateError) throw updateError;
+          loadGroup();
+          return;
+        }
+        throw assignError;
+      }
 
       // Mark group as assigned
       const { error: updateError } = await supabase
@@ -195,7 +246,15 @@ export default function GroupPage() {
       // Reload to show updated state
       loadGroup();
     } catch (err: any) {
-      setError(err.message || "Failed to assign Wichtels");
+      if (err.code === '23505') {
+        setError("Wichtels have already been assigned. Refreshing...");
+        // Reload to get the updated state
+        setTimeout(() => loadGroup(), 1000);
+      } else {
+        setError(err.message || "Failed to assign Wichtels");
+      }
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -313,8 +372,13 @@ export default function GroupPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={handleAssign} className="w-full" size="lg">
-                Assign Wichtels
+              <Button 
+                onClick={handleAssign} 
+                className="w-full" 
+                size="lg"
+                disabled={assigning || group?.is_assigned}
+              >
+                {assigning ? "Assigning..." : "Assign Wichtels"}
               </Button>
             </CardContent>
           </Card>
