@@ -38,22 +38,33 @@ export default function ViewWichtelPage() {
         .select("receiver_id")
         .eq("group_id", groupId)
         .eq("giver_id", participantId)
-        .single();
+        .maybeSingle();
 
-      if (assignmentError) {
+      if (assignmentError && assignmentError.code !== 'PGRST116') {
+        throw assignmentError;
+      }
+
+      if (!assignment) {
         // Check if group is assigned
-        const { data: group } = await supabase
+        const { data: group, error: groupError } = await supabase
           .from("groups")
           .select("is_assigned")
           .eq("id", groupId)
-          .single();
+          .maybeSingle();
 
-        if (group && !group.is_assigned) {
+        if (groupError && groupError.code !== 'PGRST116') {
+          throw groupError;
+        }
+
+        if (!group || !group.is_assigned) {
           setError("Wichtels haven&apos;t been assigned yet. Please wait for the group organizer to assign them.");
           setLoading(false);
           return;
+        } else {
+          setError("No assignment found for this participant.");
+          setLoading(false);
+          return;
         }
-        throw assignmentError;
       }
 
       // Get the receiver's information

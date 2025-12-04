@@ -15,11 +15,14 @@ export function handleSupabaseError(error: any): string {
   if (error.code) {
     switch (error.code) {
       case 'PGRST116':
-        return 'No rows found';
+        // No rows found - this is often expected, not an error
+        return 'No matching record found';
       case '23505':
         return 'This record already exists';
       case '42501':
         return 'Permission denied';
+      case 'PGRST301':
+        return 'Cannot coerce the result to a single JSON object. Multiple rows or no rows returned.';
       default:
         return error.message || `Error: ${error.code}`;
     }

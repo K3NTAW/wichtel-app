@@ -73,14 +73,14 @@ export default function GroupPage() {
     const user = await getCurrentUser();
     if (user) {
       // Check if user has a participant entry for this group
-      const { data } = await supabase
+      const { data, error: participantError } = await supabase
         .from("participants")
         .select("id, name, created_at")
         .eq("group_id", groupId)
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
       
-      if (data) {
+      if (data && !participantError) {
         setFoundParticipant(data);
       }
     } else {
@@ -94,9 +94,9 @@ export default function GroupPage() {
               .select("id, name, created_at")
               .eq("id", storedParticipantId)
               .eq("group_id", groupId)
-              .single()
-              .then(({ data }) => {
-                if (data) {
+              .maybeSingle()
+              .then(({ data, error }) => {
+                if (data && !error) {
                   setFoundParticipant(data);
                 }
               });
@@ -133,9 +133,14 @@ export default function GroupPage() {
         .eq("group_id", groupId)
         .ilike("name", `%${searchName.trim()}%`)
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (searchError || !data) {
+      if (searchError && searchError.code !== 'PGRST116') {
+        // PGRST116 means no rows found, which is fine
+        throw searchError;
+      }
+
+      if (!data) {
         setFoundParticipant(null);
         setError("Participant not found. Make sure you've joined the group first.");
       } else {
