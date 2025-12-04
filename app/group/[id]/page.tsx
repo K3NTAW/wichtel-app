@@ -349,14 +349,16 @@ export default function GroupPage() {
                     className="p-3 bg-muted rounded-lg flex items-center justify-between"
                   >
                     <span className="font-medium">{participant.name}</span>
-                    {group?.is_assigned ? (
+                    {group?.is_assigned && foundParticipant && foundParticipant.id === participant.id ? (
                       <Link href={`/group/${groupId}/wichtel/${participant.id}?code=${shareCode}`}>
                         <Button variant="outline" size="sm">
-                          View Wichtel
+                          View My Wichtel
                         </Button>
                       </Link>
                     ) : (
-                      <span className="text-sm text-muted-foreground">Joined</span>
+                      <span className="text-sm text-muted-foreground">
+                        {group?.is_assigned ? "Assigned" : "Joined"}
+                      </span>
                     )}
                   </div>
                 ))}
@@ -465,12 +467,35 @@ export default function GroupPage() {
               </CardContent>
             </Card>
 
-            {/* List of all participants - click on your name */}
+            {/* List of all participants - only show your own if found */}
+            {foundParticipant && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Participant Entry</CardTitle>
+                  <CardDescription>
+                    You&apos;re registered as {foundParticipant.name}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-4 bg-muted rounded-lg flex items-center justify-between">
+                    <span className="font-medium text-lg">{foundParticipant.name}</span>
+                    <Link href={`/group/${groupId}/wichtel/${foundParticipant.id}?code=${shareCode}`}>
+                      <Button variant="outline" size="sm">
+                        <Gift className="h-4 w-4 mr-2" />
+                        View My Wichtel
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* List of all participants (names only, no access to their Wichtels) */}
             <Card>
               <CardHeader>
-                <CardTitle>All Participants</CardTitle>
+                <CardTitle>All Participants ({participants.length})</CardTitle>
                 <CardDescription>
-                  Click on your name to see who you&apos;re wichteling for
+                  Everyone who has joined this group
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -479,15 +504,14 @@ export default function GroupPage() {
                     {participants.map((participant) => (
                       <div
                         key={participant.id}
-                        className="p-4 bg-muted rounded-lg flex items-center justify-between hover:bg-muted/80 transition-colors"
+                        className="p-3 bg-muted rounded-lg flex items-center justify-between"
                       >
-                        <span className="font-medium text-lg">{participant.name}</span>
-                        <Link href={`/group/${groupId}/wichtel/${participant.id}?code=${shareCode}`}>
-                          <Button variant="outline" size="sm">
-                            <Gift className="h-4 w-4 mr-2" />
-                            View My Wichtel
-                          </Button>
-                        </Link>
+                        <span className="font-medium">{participant.name}</span>
+                        {foundParticipant && foundParticipant.id === participant.id ? (
+                          <span className="text-sm text-primary font-medium">(You)</span>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Joined</span>
+                        )}
                       </div>
                     ))}
                   </div>

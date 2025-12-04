@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
+import { getCurrentUser } from "@/lib/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ type Participant = {
 export default function ViewWichtelPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const groupId = params.id as string;
   const participantId = params.participantId as string;
   const shareCode = searchParams.get("code") || "";
@@ -29,6 +31,66 @@ export default function ViewWichtelPage() {
   const [wichtel, setWichtel] = useState<Participant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [checkingAccess, setCheckingAccess] = useState(true);
+
+  const checkAccess = useCallback(async () => {
+    try {
+      const user = await getCurrentUser();
+      
+      // Check if this participant belongs to the current user
+      const { data: participant, error: participantError } = await supabase
+        .from("participants")
+        .select("user_id")
+        .eq("id", participantId)
+        .eq("group_id", groupId)
+        .maybeSingle();
+
+      if (participantError && participantError.code !== 'PGRST116') {
+        throw participantError;
+      }
+
+      if (!participant) {
+        setError("Participant not found.");
+        setCheckingAccess(false);
+        setLoading(false);
+        return false;
+      }
+
+      // If user is logged in, verify they own this participant entry
+      if (user) {
+        if (participant.user_id !== user.id) {
+          setError("You can only view your own Wichtel. Access denied.");
+          setCheckingAccess(false);
+          setLoading(false);
+          return false;
+        }
+      } else {
+        // For non-logged-in users, check localStorage
+        if (typeof window !== "undefined") {
+          const storedParticipantId = localStorage.getItem(`wichtel_participant_${groupId}`);
+          if (storedParticipantId !== participantId) {
+            setError("You can only view your own Wichtel. Access denied.");
+            setCheckingAccess(false);
+            setLoading(false);
+            return false;
+          }
+        } else {
+          setError("Please sign in to view your Wichtel.");
+          setCheckingAccess(false);
+          setLoading(false);
+          return false;
+        }
+      }
+
+      setCheckingAccess(false);
+      return true;
+    } catch (err: any) {
+      setError(err.message || "Failed to verify access");
+      setCheckingAccess(false);
+      setLoading(false);
+      return false;
+    }
+  }, [groupId, participantId]);
 
   const loadWichtel = useCallback(async () => {
     try {
@@ -84,15 +146,23 @@ export default function ViewWichtelPage() {
   }, [groupId, participantId]);
 
   useEffect(() => {
-    loadWichtel();
-  }, [loadWichtel]);
+    const verifyAndLoad = async () => {
+      const hasAccess = await checkAccess();
+      if (hasAccess) {
+        loadWichtel();
+      }
+    };
+    verifyAndLoad();
+  }, [checkAccess, loadWichtel]);
 
-  if (loading) {
+  if (checkingAccess || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading your Wichtel...</p>
+          <p className="mt-4 text-muted-foreground">
+            {checkingAccess ? "Verifying access..." : "Loading your Wichtel..."}
+          </p>
         </div>
       </div>
     );
